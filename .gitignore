@@ -1,0 +1,25 @@
+# Terraform working directories and local state. Never commit these.
+**/.terraform/
+*.tfstate
+*.tfstate.*
+crash.log
+crash.*.log
+
+# Anything auto-loaded is likely local or secret. Per-environment value files
+# (dev.tfvars, prod.tfvars) are NOT ignored: those belong in the repo.
+*.auto.tfvars
+*.auto.tfvars.json
+secrets.tfvars
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
+
+# Draft output of `terraform plan -generate-config-out=`. Clean it up and move
+# the good parts into a real .tf file before committing.
+generated*.tf
+
+# Note: .terraform.lock.hcl IS committed on purpose. It pins the exact provider
+# versions so every teammate and the pipeline resolve the same ones.
+
+.DS_Store
