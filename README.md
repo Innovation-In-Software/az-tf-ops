@@ -23,8 +23,9 @@ do that to one repository.
 
 ```
 az-tf-ops/
-  environments/          one directory per environment, added as the course goes
-    dev/                 Lab 3 onward
+  main.tf                Labs 3 and 4 only. Lab 5 moves this into environments/dev/
+  environments/          one directory per environment, created in Lab 5
+    dev/                 Lab 5 onward
     prod/                Lab 5 onward
     legacy-reporting/    Lab 9, imported rather than created
   scripts/               bootstrap scripts, see below
@@ -34,9 +35,15 @@ az-tf-ops/
   .github/workflows/     Lab 10
 ```
 
-Each environment directory is its own **root module**: its own `terraform init`,
-its own backend, its own state file, its own `plan` and `apply`. Run Terraform
-from inside one, never from the repository root.
+**Labs 3 and 4 work at the repository root.** You write a single `main.tf` there
+and apply it, which keeps the first two Terraform labs about Terraform rather
+than about directory layout.
+
+**Lab 5 introduces `environments/`** and moves that configuration into
+`environments/dev/`. From then on, each environment directory is its own
+**root module**: its own `terraform init`, its own backend, its own state file,
+its own `plan` and `apply`. Once you are past Lab 5, run Terraform from inside
+an environment directory, never from the repository root.
 
 ## Scripts
 
