@@ -110,26 +110,32 @@ function New-SummitVault {
     $password = 'Su!' + ([Convert]::ToBase64String($bytes) -replace '[^A-Za-z0-9]', 'x')
 
     # Role assignments take up to a couple of minutes to reach the data plane.
+    #
+    # NOTE: az is a native command. A failure sets a non-zero $LASTEXITCODE, it
+    # does NOT throw, so try/catch cannot detect it. Check the exit code.
     $set = $false
     foreach ($attempt in 1..10) {
-        try {
-            az keyvault secret set `
-                --vault-name $vaultName `
-                --name $secretName `
-                --value $password `
-                --output none 2>$null
-            $set = $true
-            break
-        }
-        catch {
-            Write-Host "  waiting for the role assignment to propagate (attempt $attempt of 10)..." -ForegroundColor DarkGray
-            Start-Sleep -Seconds 15
-        }
+        az keyvault secret set `
+            --vault-name $vaultName `
+            --name $secretName `
+            --value $password `
+            --output none 2>$null
+        if ($LASTEXITCODE -eq 0) { $set = $true; break }
+        Write-Host "  waiting for the role assignment to propagate (attempt $attempt of 10)..." -ForegroundColor DarkGray
+        Start-Sleep -Seconds 15
     }
     if (-not $set) {
         throw "Could not write the secret to $vaultName. Role assignments sometimes take several minutes; wait and rerun this script."
     }
-    Write-Host "  secret '$secretName' set" -ForegroundColor Green
+
+    # Prove it is readable before claiming success. Terraform will read this
+    # secret through a data source, and a vault that accepts a write but is not
+    # yet readable produces a confusing "secret does not exist" at plan time.
+    az keyvault secret show --vault-name $vaultName --name $secretName --output none 2>$null
+    if ($LASTEXITCODE -ne 0) {
+        throw "Wrote the secret to $vaultName but cannot read it back. Wait a minute and rerun this script."
+    }
+    Write-Host "  secret '$secretName' set and readable" -ForegroundColor Green
 
     return $vaultName
 }

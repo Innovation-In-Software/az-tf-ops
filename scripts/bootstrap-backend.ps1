@@ -100,16 +100,18 @@ Write-Host "blob versioning enabled" -ForegroundColor Green
 # Role assignments can take a minute to reach the data plane, so retry.
 $created = $false
 foreach ($attempt in 1..6) {
-    try {
-        az storage container create `
-            --name $container `
-            --account-name $storageAccount `
-            --auth-mode login `
-            --output none 2>$null
+    # az is a native command: a failure sets $LASTEXITCODE and does not throw,
+    # so try/catch would never fire here.
+    az storage container create `
+        --name $container `
+        --account-name $storageAccount `
+        --auth-mode login `
+        --output none 2>$null
+    if ($LASTEXITCODE -eq 0) {
         $created = $true
         break
     }
-    catch {
+    else {
         Write-Host "  waiting for storage permissions to propagate (attempt $attempt of 6)..." -ForegroundColor DarkGray
         Start-Sleep -Seconds 10
     }
