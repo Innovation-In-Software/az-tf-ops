@@ -27,10 +27,10 @@
   Leave the Lab 10 service principal in place.
 
 .EXAMPLE
-  .\scripts\destroy-all.ps1 -Suffix jr42 -WhatIf
+  .\scripts\destroy-all.ps1 -Suffix jr63 -WhatIf
 
 .EXAMPLE
-  .\scripts\destroy-all.ps1 -Suffix jr42
+  .\scripts\destroy-all.ps1 -Suffix jr63
 #>
 [CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = 'High')]
 param(
@@ -42,7 +42,14 @@ param(
     [switch]$SkipServicePrincipal
 )
 
-$ErrorActionPreference = 'Stop'
+# az is a native command, not a cmdlet. When it fails it writes to stderr and sets
+# a non-zero $LASTEXITCODE; it never throws. Windows PowerShell converts that
+# stderr write into a *terminating* error whenever $ErrorActionPreference is
+# 'Stop', and `2>$null` does NOT prevent it. That kills this script on failures it
+# is supposed to handle, such as probing for a vault that is not there yet, before
+# any exit-code check can run. So keep the preference at 'Continue' and test
+# $LASTEXITCODE after each az call whose outcome matters.
+$ErrorActionPreference = 'Continue'
 
 $account = az account show --output json 2>$null | ConvertFrom-Json
 if (-not $account) { throw "Not signed in. Run 'az login' first." }

@@ -31,10 +31,10 @@
   the GitHub CLI (gh) is signed in, the secrets are set for you.
 
 .EXAMPLE
-  .\scripts\create-service-principal.ps1 -Name jrivera -Suffix jr42
+  .\scripts\create-service-principal.ps1 -Name jrivera -Suffix jr63
 
 .EXAMPLE
-  .\scripts\create-service-principal.ps1 -Name jrivera -Suffix jr42 -Repo jrivera/az-tf-ops-jrivera
+  .\scripts\create-service-principal.ps1 -Name jrivera -Suffix jr63 -Repo jrivera/az-tf-ops-jrivera
 #>
 [CmdletBinding()]
 param(
@@ -48,7 +48,14 @@ param(
     [string]$Repo
 )
 
-$ErrorActionPreference = 'Stop'
+# az is a native command, not a cmdlet. When it fails it writes to stderr and sets
+# a non-zero $LASTEXITCODE; it never throws. Windows PowerShell converts that
+# stderr write into a *terminating* error whenever $ErrorActionPreference is
+# 'Stop', and `2>$null` does NOT prevent it. That kills this script on failures it
+# is supposed to handle, such as probing for a vault that is not there yet, before
+# any exit-code check can run. So keep the preference at 'Continue' and test
+# $LASTEXITCODE after each az call whose outcome matters.
+$ErrorActionPreference = 'Continue'
 
 $account = az account show --output json 2>$null | ConvertFrom-Json
 if (-not $account) { throw "Not signed in. Run 'az login' first." }

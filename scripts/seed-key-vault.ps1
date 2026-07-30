@@ -23,7 +23,7 @@
   Azure region. Defaults to eastus.
 
 .EXAMPLE
-  .\scripts\seed-key-vault.ps1 -Suffix jr42
+  .\scripts\seed-key-vault.ps1 -Suffix jr63
 #>
 [CmdletBinding()]
 param(
@@ -34,7 +34,14 @@ param(
     [string]$Location = 'eastus'
 )
 
-$ErrorActionPreference = 'Stop'
+# az is a native command, not a cmdlet. When it fails it writes to stderr and sets
+# a non-zero $LASTEXITCODE; it never throws. Windows PowerShell converts that
+# stderr write into a *terminating* error whenever $ErrorActionPreference is
+# 'Stop', and `2>$null` does NOT prevent it. That kills this script on failures it
+# is supposed to handle, such as probing for a vault that is not there yet, before
+# any exit-code check can run. So keep the preference at 'Continue' and test
+# $LASTEXITCODE after each az call whose outcome matters.
+$ErrorActionPreference = 'Continue'
 
 $resourceGroup = 'rg-summit-security'
 $secretName    = 'vm-admin-password'
@@ -58,6 +65,7 @@ az group create `
     --location $Location `
     --tags solution=orders owner=security-team managed_by=bootstrap `
     --output none
+if ($LASTEXITCODE -ne 0) { throw "Could not create resource group $resourceGroup." }
 Write-Host "resource group $resourceGroup ready" -ForegroundColor Green
 
 function New-SummitVault {
@@ -86,6 +94,7 @@ function New-SummitVault {
             --retention-days 7 `
             --tags environment=$Environment solution=orders owner=security-team managed_by=bootstrap `
             --output none
+        if ($LASTEXITCODE -ne 0) { throw "Could not create vault $vaultName." }
         Write-Host "  vault created" -ForegroundColor Green
     }
     else {
