@@ -79,7 +79,7 @@ if ($available -eq 'true') {
         --sku Standard_GRS `
         --kind StorageV2 `
         --access-tier Cool `
-        --min-tls-version TLS1_0 `
+        --allow-blob-public-access true `
         --tags Owner=dave.reporting env=Production `
         --output none
     Write-Host "storage account $storageAccount" -ForegroundColor Green
