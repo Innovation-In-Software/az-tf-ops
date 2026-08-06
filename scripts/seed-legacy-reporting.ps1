@@ -70,6 +70,11 @@ az group create `
 Write-Host "resource group $resourceGroup" -ForegroundColor Green
 
 # --- storage account, with settings a 2023 default would have given you ------
+#
+# Deliberately no --min-tls-version. The account API default is still TLS1_0, which
+# is the drift Lab 9 imports and then remediates. Passing --min-tls-version TLS1_0
+# does the opposite of what it looks like: the value was retired on 2026/02/03, so
+# the CLI warns and creates the account at TLS1_2, leaving the lab nothing to fix.
 $available = az storage account check-name --name $storageAccount --query nameAvailable -o tsv
 if ($available -eq 'true') {
     az storage account create `
@@ -79,7 +84,6 @@ if ($available -eq 'true') {
         --sku Standard_GRS `
         --kind StorageV2 `
         --access-tier Cool `
-        --allow-blob-public-access true `
         --tags Owner=dave.reporting env=Production `
         --output none
     Write-Host "storage account $storageAccount" -ForegroundColor Green
